@@ -81,11 +81,6 @@ export default function Home() {
                 ♥ Saved
               </Button>
             </Link>
-            <Link href="/dashboard">
-              <Button size="sm" variant="outline" className="text-xs sm:text-sm hidden sm:flex">
-                Stats
-              </Button>
-            </Link>
             <Link href="/new">
               <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-xs sm:text-sm">
                 + Post

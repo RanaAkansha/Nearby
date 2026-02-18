@@ -2,9 +2,12 @@
 
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState } from 'react';
+import { Heart } from 'lucide-react';
 
 type Post = {
   id: string;
@@ -29,12 +32,37 @@ const categoryColors: Record<string, { bg: string; text: string; label: string }
 };
 
 export function PostCard({ post }: { post: Post }) {
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
   const colors = categoryColors[post.category];
   const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
 
+  const handleSave = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/favorites', {
+        method: isSaved ? 'DELETE' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId: post.id }),
+      });
+
+      if (response.ok) {
+        setIsSaved(!isSaved);
+      }
+    } catch (error) {
+      console.error('Error saving post:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
-    <Link href={`/posts/${post.id}`}>
-      <Card className="overflow-hidden hover:shadow-xl hover:scale-105 transition-all duration-200 cursor-pointer h-full flex flex-col bg-white border border-slate-100">
+    <Card className="overflow-hidden hover:shadow-xl transition-all duration-200 h-full flex flex-col bg-white border border-slate-100 relative group">
+      <Link href={`/posts/${post.id}`} className="contents">
         {post.image_url && (
           <div className="relative w-full h-40 bg-gradient-to-br from-slate-100 to-slate-200">
             <Image
@@ -64,7 +92,22 @@ export function PostCard({ post }: { post: Post }) {
             <p className="text-xs text-slate-500 font-medium">by {post.name} • Room {post.room}</p>
           </div>
         </div>
-      </Card>
-    </Link>
+      </Link>
+
+      {/* Save Button */}
+      <Button
+        onClick={handleSave}
+        disabled={isSaving}
+        variant="ghost"
+        size="icon"
+        className="absolute top-3 right-3 h-8 w-8 rounded-full bg-white shadow-md hover:bg-slate-50"
+      >
+        <Heart
+          className={`w-5 h-5 transition-colors ${
+            isSaved ? 'fill-red-500 text-red-500' : 'text-slate-400 hover:text-red-500'
+          }`}
+        />
+      </Button>
+    </Card>
   );
 }
