@@ -60,12 +60,19 @@ export default function PostDetailPage() {
   }, [params.id]);
 
   const handleClaim = async () => {
+    if (!post) return;
     if (!confirm('Mark this item as claimed?')) return;
 
     setClaiming(true);
     try {
       const response = await fetch(`/api/posts/${params.id}/claim`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          claimedBy: post.name,
+        }),
       });
 
       if (!response.ok) throw new Error('Failed to claim item');
