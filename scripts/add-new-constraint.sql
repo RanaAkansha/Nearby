@@ -1,6 +1,6 @@
--- Add the new constraint that includes 'want'
+-- Add the new constraint that includes 'want' without validating existing rows
 ALTER TABLE posts ADD CONSTRAINT posts_category_check 
-CHECK (category IN ('sell', 'free', 'want', 'lost', 'found', 'announcement'));
+CHECK (category IN ('sell', 'free', 'want', 'lost', 'found', 'announcement')) NOT VALID;
 
 -- Update the expiration function to handle 'want' category
 CREATE OR REPLACE FUNCTION set_post_expiration()
