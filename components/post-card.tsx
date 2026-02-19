@@ -51,10 +51,13 @@ export function PostCard({ post }: { post: Post }) {
   );
 
   useEffect(() => {
+    console.log('[v0] Favorites data updated:', { userId, favorites: favoritesData?.favorites, postId: post.id });
     if (favoritesData?.favorites) {
-      setIsSaved(favoritesData.favorites.includes(post.id));
+      const saved = favoritesData.favorites.includes(post.id);
+      setIsSaved(saved);
+      console.log('[v0] Post is saved:', saved);
     }
-  }, [favoritesData, post.id]);
+  }, [favoritesData, post.id, userId]);
   
   const colors = categoryColors[post.category];
   const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
@@ -65,17 +68,25 @@ export function PostCard({ post }: { post: Post }) {
     
     setIsSaving(true);
     try {
+      console.log('[v0] Saving post:', { postId: post.id, userId, isSaved });
+      
       const response = await fetch('/api/favorites', {
         method: isSaved ? 'DELETE' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId: post.id }),
+        body: JSON.stringify({ postId: post.id, userId }),
       });
 
+      console.log('[v0] Save response:', response.status);
+      
       if (response.ok) {
         setIsSaved(!isSaved);
+        console.log('[v0] Save successful, new state:', !isSaved);
+      } else {
+        const errorData = await response.json();
+        console.error('[v0] Save failed:', errorData);
       }
     } catch (error) {
-      console.error('Error saving post:', error);
+      console.error('[v0] Error saving post:', error);
     } finally {
       setIsSaving(false);
     }

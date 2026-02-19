@@ -24,11 +24,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, postId, action } = body;
+    let { postId } = body;
+    
+    // Get userId from localStorage (passed by client) or use a default
+    const userId = body.userId || 'guest';
 
-    if (!userId || !postId) {
+    if (!postId) {
       return NextResponse.json(
-        { error: 'userId and postId are required' },
+        { error: 'postId is required' },
         { status: 400 }
       );
     }
@@ -38,19 +41,42 @@ export async function POST(request: NextRequest) {
     }
 
     const userFavorites = favorites.get(userId)!;
-
-    if (action === 'add') {
-      userFavorites.add(postId);
-    } else if (action === 'remove') {
-      userFavorites.delete(postId);
-    }
+    userFavorites.add(postId);
 
     return NextResponse.json(
-      { favorites: Array.from(userFavorites) },
+      { success: true, favorites: Array.from(userFavorites) },
       { status: 200 }
     );
   } catch (error) {
     console.error('Error updating favorites:', error);
     return NextResponse.json({ error: 'Failed to update favorites' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { postId } = body;
+    const userId = body.userId || 'guest';
+
+    if (!postId) {
+      return NextResponse.json(
+        { error: 'postId is required' },
+        { status: 400 }
+      );
+    }
+
+    if (favorites.has(userId)) {
+      const userFavorites = favorites.get(userId)!;
+      userFavorites.delete(postId);
+    }
+
+    return NextResponse.json(
+      { success: true, favorites: Array.from(favorites.get(userId) || new Set()) },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Error removing favorite:', error);
+    return NextResponse.json({ error: 'Failed to remove favorite' }, { status: 500 });
   }
 }
