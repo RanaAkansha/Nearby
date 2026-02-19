@@ -7,13 +7,10 @@ const favorites = new Map<string, Set<string>>();
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-
-    if (!userId) {
-      return NextResponse.json({ favorites: [] }, { status: 200 });
-    }
+    const userId = searchParams.get('userId') || 'guest';
 
     const userFavorites = favorites.get(userId) || new Set();
+    console.log('[v0] Fetching favorites for userId:', userId, 'favorites:', Array.from(userFavorites));
     return NextResponse.json({ favorites: Array.from(userFavorites) }, { status: 200 });
   } catch (error) {
     console.error('Error fetching favorites:', error);
