@@ -35,6 +35,16 @@ export default function AdminDashboard() {
 
   const { data: posts, isLoading, error, mutate } = useSWR<Post[]>('/api/posts', fetcher);
 
+  // Calculate statistics
+  const totalPosts = posts?.length || 0;
+  const activePosts = posts?.filter(p => !p.claimed).length || 0;
+  const claimedPosts = posts?.filter(p => p.claimed).length || 0;
+
+  const categoryStats = posts?.reduce((acc, post) => {
+    acc[post.category] = (acc[post.category] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>) || {};
+
   const handleDeletePost = async (postId: string) => {
     if (!confirm('Are you sure you want to delete this post?')) return;
 
@@ -85,6 +95,45 @@ export default function AdminDashboard() {
 
       {/* Content */}
       <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* Statistics Cards */}
+        {!isLoading && posts && posts.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <Card className="p-6 bg-white border border-slate-100">
+              <p className="text-sm text-slate-600 font-medium mb-2">Total Posts</p>
+              <p className="text-3xl font-bold text-purple-600">{totalPosts}</p>
+            </Card>
+            <Card className="p-6 bg-white border border-slate-100">
+              <p className="text-sm text-slate-600 font-medium mb-2">Active Posts</p>
+              <p className="text-3xl font-bold text-emerald-600">{activePosts}</p>
+              <div className="mt-3 bg-emerald-100 rounded-full h-2 w-full overflow-hidden">
+                <div className="bg-emerald-600 h-full" style={{ width: `${totalPosts > 0 ? (activePosts / totalPosts) * 100 : 0}%` }}></div>
+              </div>
+            </Card>
+            <Card className="p-6 bg-white border border-slate-100">
+              <p className="text-sm text-slate-600 font-medium mb-2">Claimed Items</p>
+              <p className="text-3xl font-bold text-blue-600">{claimedPosts}</p>
+              <div className="mt-3 bg-blue-100 rounded-full h-2 w-full overflow-hidden">
+                <div className="bg-blue-600 h-full" style={{ width: `${totalPosts > 0 ? (claimedPosts / totalPosts) * 100 : 0}%` }}></div>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Category Breakdown */}
+        {!isLoading && posts && posts.length > 0 && Object.keys(categoryStats).length > 0 && (
+          <Card className="p-6 mb-8 bg-white border border-slate-100">
+            <h2 className="text-lg font-bold text-slate-900 mb-4">Posts by Category</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {Object.entries(categoryStats).map(([category, count]) => (
+                <div key={category} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <p className="text-xs text-slate-600 font-medium capitalize">{category}</p>
+                  <p className="text-2xl font-bold text-slate-900 mt-1">{count}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
         {isLoading ? (
           <div className="text-center py-12">
             <p className="text-slate-600">Loading posts...</p>

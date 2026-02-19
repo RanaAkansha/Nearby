@@ -8,21 +8,39 @@ const supabase = createClient(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    const body = await request.json().catch(() => ({}));
+    const { claimedBy } = body;
+
+    if (!claimedBy) {
+      return NextResponse.json(
+        { error: 'claimedBy name is required' },
+        { status: 400 }
+      );
+    }
+
     const { data, error } = await supabase
       .from('posts')
       .update({
         claimed: true,
-        claimed_by: 'User',
+        claimed_by: claimedBy,
         claimed_at: new Date().toISOString(),
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .select();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    if (!data || data.length === 0) {
+      return NextResponse.json(
+        { error: 'Post not found' },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json(data[0], { status: 200 });
