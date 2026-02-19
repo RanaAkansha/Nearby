@@ -3,6 +3,8 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { RelatedItems } from '@/components/related-items';
+import { ContactSellerModal } from '@/components/contact-seller-modal';
 import { formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -40,7 +42,8 @@ export default function PostDetailPage() {
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
-  const [deleting, setDeleting] = useState(false); // Declare setDeleting variable
+  const [deleting, setDeleting] = useState(false);
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -194,6 +197,17 @@ export default function PostDetailPage() {
                 Posted by <span className="font-bold text-slate-900">{post.name}</span> • Room {post.room}
               </p>
               <p className="text-xs text-slate-500 mt-2">{new Date(post.created_at).toLocaleString()}</p>
+              
+              {!post.claimed && (
+                <div className="mt-4 flex gap-2">
+                  <Button
+                    onClick={() => setIsContactModalOpen(true)}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-sm"
+                  >
+                    Contact Seller
+                  </Button>
+                </div>
+              )}
             </div>
 
             {!post.claimed && (
@@ -229,8 +243,22 @@ export default function PostDetailPage() {
                 </p>
               </div>
             )}
+
+            {/* Related Items */}
+            {post && <RelatedItems currentPost={post} />}
           </div>
         </Card>
+
+        {/* Contact Modal */}
+        {post && (
+          <ContactSellerModal
+            isOpen={isContactModalOpen}
+            onClose={() => setIsContactModalOpen(false)}
+            sellerName={post.name}
+            sellerRoom={post.room}
+            postTitle={post.title}
+          />
+        )}
       </div>
     </main>
   );

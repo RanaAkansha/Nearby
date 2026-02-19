@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
-import { Heart } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Heart, Share2, MessageCircle } from 'lucide-react';
+import useSWR from 'swr';
 
 type Post = {
   id: string;
@@ -31,9 +32,29 @@ const categoryColors: Record<string, { bg: string; text: string; label: string }
   announcement: { bg: 'bg-rose-50', text: 'text-rose-700', label: 'Announcement' },
 };
 
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
 export function PostCard({ post }: { post: Post }) {
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [userId, setUserId] = useState('');
+
+  useEffect(() => {
+    const id = localStorage.getItem('userName') || '';
+    setUserId(id);
+  }, []);
+
+  const { data: favoritesData } = useSWR(
+    userId ? `/api/favorites?userId=${userId}` : null,
+    fetcher,
+    { dedupingInterval: 5000 }
+  );
+
+  useEffect(() => {
+    if (favoritesData?.favorites) {
+      setIsSaved(favoritesData.favorites.includes(post.id));
+    }
+  }, [favoritesData, post.id]);
   
   const colors = categoryColors[post.category];
   const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
@@ -57,6 +78,27 @@ export function PostCard({ post }: { post: Post }) {
       console.error('Error saving post:', error);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: post.title,
+          text: `Check out "${post.title}" on Nearby`,
+          url: `${window.location.origin}/posts/${post.id}`,
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+      }
+    } else {
+      const url = `${window.location.origin}/posts/${post.id}`;
+      navigator.clipboard.writeText(url);
+      alert('Link copied to clipboard!');
     }
   };
 
@@ -94,20 +136,30 @@ export function PostCard({ post }: { post: Post }) {
         </div>
       </Link>
 
-      {/* Save Button */}
-      <Button
-        onClick={handleSave}
-        disabled={isSaving}
-        variant="ghost"
-        size="icon"
-        className="absolute top-3 right-3 h-8 w-8 rounded-full bg-white shadow-md hover:bg-slate-50"
-      >
-        <Heart
-          className={`w-5 h-5 transition-colors ${
-            isSaved ? 'fill-red-500 text-red-500' : 'text-slate-400 hover:text-red-500'
-          }`}
-        />
-      </Button>
+      {/* Action Buttons */}
+      <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Button
+          onClick={handleShare}
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 rounded-full bg-white shadow-md hover:bg-slate-50"
+        >
+          <Share2 className="w-5 h-5 text-slate-500 hover:text-purple-600" />
+        </Button>
+        <Button
+          onClick={handleSave}
+          disabled={isSaving}
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 rounded-full bg-white shadow-md hover:bg-slate-50"
+        >
+          <Heart
+            className={`w-5 h-5 transition-colors ${
+              isSaved ? 'fill-red-500 text-red-500' : 'text-slate-400 hover:text-red-500'
+            }`}
+          />
+        </Button>
+      </div>
     </Card>
   );
 }
