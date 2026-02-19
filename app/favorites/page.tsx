@@ -45,7 +45,7 @@ export default function FavoritesPage() {
   );
 
   const { data: favoritesData, isLoading: favoritesLoading } = useSWR(
-    mounted && userId ? `/api/favorites?userId=${userId}` : null,
+    mounted ? `/api/favorites?userId=${userId || 'guest'}` : null,
     fetcher,
     {
       revalidateOnFocus: false,
@@ -55,8 +55,16 @@ export default function FavoritesPage() {
 
   if (!mounted) return null;
 
+  console.log('[v0] Favorites page - favoritesData:', favoritesData);
+  
   const favoriteIds = new Set(favoritesData?.favorites || []);
-  let favoritePosts = allPosts?.filter(p => favoriteIds.has(p.id) && !p.claimed) || [];
+  console.log('[v0] Favorite IDs:', Array.from(favoriteIds));
+  
+  let favoritePosts = allPosts?.filter(p => {
+    const isFavorited = favoriteIds.has(p.id);
+    console.log('[v0] Checking post:', p.title, 'is favorited:', isFavorited);
+    return isFavorited && !p.claimed;
+  }) || [];
 
   // Filter by category
   if (selectedCategory !== 'all') {

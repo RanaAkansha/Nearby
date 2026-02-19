@@ -51,10 +51,13 @@ export function PostCard({ post }: { post: Post }) {
   );
 
   useEffect(() => {
+    console.log('[v0] Favorites data updated:', { userId, favorites: favoritesData?.favorites, postId: post.id });
     if (favoritesData?.favorites) {
-      setIsSaved(favoritesData.favorites.includes(post.id));
+      const saved = favoritesData.favorites.includes(post.id);
+      setIsSaved(saved);
+      console.log('[v0] Post is saved:', saved);
     }
-  }, [favoritesData, post.id]);
+  }, [favoritesData, post.id, userId]);
   
   const colors = categoryColors[post.category];
   const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
@@ -65,17 +68,25 @@ export function PostCard({ post }: { post: Post }) {
     
     setIsSaving(true);
     try {
+      console.log('[v0] Saving post:', { postId: post.id, userId, isSaved });
+      
       const response = await fetch('/api/favorites', {
         method: isSaved ? 'DELETE' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId: post.id }),
+        body: JSON.stringify({ postId: post.id, userId }),
       });
 
+      console.log('[v0] Save response:', response.status);
+      
       if (response.ok) {
         setIsSaved(!isSaved);
+        console.log('[v0] Save successful, new state:', !isSaved);
+      } else {
+        const errorData = await response.json();
+        console.error('[v0] Save failed:', errorData);
       }
     } catch (error) {
-      console.error('Error saving post:', error);
+      console.error('[v0] Error saving post:', error);
     } finally {
       setIsSaving(false);
     }
@@ -85,20 +96,34 @@ export function PostCard({ post }: { post: Post }) {
     e.preventDefault();
     e.stopPropagation();
     
+    const url = `${window.location.origin}/posts/${post.id}`;
+    
     if (navigator.share) {
       try {
         await navigator.share({
           title: post.title,
           text: `Check out "${post.title}" on Nearby`,
-          url: `${window.location.origin}/posts/${post.id}`,
+          url: url,
         });
-      } catch (error) {
-        console.error('Error sharing:', error);
+      } catch (error: any) {
+        // If share is denied or fails, fall back to clipboard
+        if (error.name !== 'AbortError') {
+          try {
+            await navigator.clipboard.writeText(url);
+            alert('Link copied to clipboard!');
+          } catch {
+            alert('Unable to share or copy link');
+          }
+        }
       }
     } else {
-      const url = `${window.location.origin}/posts/${post.id}`;
-      navigator.clipboard.writeText(url);
-      alert('Link copied to clipboard!');
+      // Fallback if navigator.share is not available
+      try {
+        await navigator.clipboard.writeText(url);
+        alert('Link copied to clipboard!');
+      } catch {
+        alert('Unable to copy link to clipboard');
+      }
     }
   };
 
@@ -137,15 +162,7 @@ export function PostCard({ post }: { post: Post }) {
       </Link>
 
       {/* Action Buttons */}
-      <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button
-          onClick={handleShare}
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 rounded-full bg-white shadow-md hover:bg-slate-50"
-        >
-          <Share2 className="w-5 h-5 text-slate-500 hover:text-purple-600" />
-        </Button>
+      <div className="absolute top-3 right-3 flex gap-2">
         <Button
           onClick={handleSave}
           disabled={isSaving}
@@ -158,6 +175,14 @@ export function PostCard({ post }: { post: Post }) {
               isSaved ? 'fill-red-500 text-red-500' : 'text-slate-400 hover:text-red-500'
             }`}
           />
+        </Button>
+        <Button
+          onClick={handleShare}
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 rounded-full bg-white shadow-md hover:bg-slate-50 opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <Share2 className="w-5 h-5 text-slate-500 hover:text-purple-600" />
         </Button>
       </div>
     </Card>

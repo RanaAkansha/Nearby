@@ -218,13 +218,13 @@ export default function PostDetailPage() {
                 >
                   Edit Post
                 </Button>
-                {/* <Button
+                <Button
                   onClick={handleClaim}
                   disabled={claiming}
                   className="flex-1 bg-green-600 hover:bg-green-700"
                 >
                   {claiming ? 'Marking...' : 'Mark as Claimed'}
-                </Button> */}
+                </Button>
                 <Button
                   onClick={handleDelete}
                   disabled={deleting}
