@@ -137,15 +137,7 @@ export function PostCard({ post }: { post: Post }) {
       </Link>
 
       {/* Action Buttons */}
-      <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button
-          onClick={handleShare}
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 rounded-full bg-white shadow-md hover:bg-slate-50"
-        >
-          <Share2 className="w-5 h-5 text-slate-500 hover:text-purple-600" />
-        </Button>
+      <div className="absolute top-3 right-3 flex gap-2">
         <Button
           onClick={handleSave}
           disabled={isSaving}
@@ -158,6 +150,14 @@ export function PostCard({ post }: { post: Post }) {
               isSaved ? 'fill-red-500 text-red-500' : 'text-slate-400 hover:text-red-500'
             }`}
           />
+        </Button>
+        <Button
+          onClick={handleShare}
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 rounded-full bg-white shadow-md hover:bg-slate-50 opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <Share2 className="w-5 h-5 text-slate-500 hover:text-purple-600" />
         </Button>
       </div>
     </Card>
