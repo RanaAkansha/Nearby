@@ -85,20 +85,34 @@ export function PostCard({ post }: { post: Post }) {
     e.preventDefault();
     e.stopPropagation();
     
+    const url = `${window.location.origin}/posts/${post.id}`;
+    
     if (navigator.share) {
       try {
         await navigator.share({
           title: post.title,
           text: `Check out "${post.title}" on Nearby`,
-          url: `${window.location.origin}/posts/${post.id}`,
+          url: url,
         });
-      } catch (error) {
-        console.error('Error sharing:', error);
+      } catch (error: any) {
+        // If share is denied or fails, fall back to clipboard
+        if (error.name !== 'AbortError') {
+          try {
+            await navigator.clipboard.writeText(url);
+            alert('Link copied to clipboard!');
+          } catch {
+            alert('Unable to share or copy link');
+          }
+        }
       }
     } else {
-      const url = `${window.location.origin}/posts/${post.id}`;
-      navigator.clipboard.writeText(url);
-      alert('Link copied to clipboard!');
+      // Fallback if navigator.share is not available
+      try {
+        await navigator.clipboard.writeText(url);
+        alert('Link copied to clipboard!');
+      } catch {
+        alert('Unable to copy link to clipboard');
+      }
     }
   };
 
